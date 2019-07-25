@@ -136,11 +136,7 @@ open class UISideMenuNavigationController: UINavigationController {
     
     override open func viewWillAppear(_ animated: Bool) {
         super.viewWillAppear(animated)
-
-        if topViewController == nil {
-            Print.warning(.emptyMenu)
-        }
-
+		
         // Dismiss keyboard to prevent weird keyboard animations from occurring during transition
         presentingViewController?.view.endEditing(true)
 
