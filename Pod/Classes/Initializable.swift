@@ -7,11 +7,11 @@
 
 import Foundation
 
-public protocol InitializableClass: class {
+protocol InitializableClass: class {
     init()
 }
 
-public extension InitializableClass {
+extension InitializableClass {
 
     init(_ block: (Self) -> Void) {
         self.init()
@@ -24,11 +24,11 @@ public extension InitializableClass {
     }
 }
 
-public protocol InitializableStruct {
+protocol InitializableStruct {
     init()
 }
 
-public extension InitializableStruct {
+extension InitializableStruct {
     init(_ block: (inout Self) -> Void) {
         self.init()
         block(&self)
