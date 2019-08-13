@@ -1,4 +1,5 @@
 # ▤ SideMenu
+[![CircleCI](https://circleci.com/gh/jonkykong/SideMenu.svg?style=svg)](https://circleci.com/gh/jonkykong/SideMenu)
 [![Version](https://img.shields.io/cocoapods/v/SideMenu.svg?style=flat-square)](http://cocoapods.org/pods/SideMenu)
 [![Carthage compatible](https://img.shields.io/badge/Carthage-compatible-4BC51D.svg?style=flat-square)](https://github.com/Carthage/Carthage)
 [![License](https://img.shields.io/cocoapods/l/SideMenu.svg?style=flat-square)](http://cocoapods.org/pods/SideMenu)
@@ -72,10 +73,10 @@ use_frameworks!
 pod 'SideMenu'
 
 # For Swift 5 use:
-# pod 'SideMenu', '~> 6.0.0'
+# pod 'SideMenu', '~> 6.0'
 
 # For Swift 4.2 (no longer maintained) use:
-# pod 'SideMenu', '~> 5.0.0'
+# pod 'SideMenu', '~> 5.0'
 ```
 
 Then, run the following command:
@@ -149,9 +150,9 @@ SideMenuManager.default.addPanGestureToPresent(toView: self.navigationController
 SideMenuManager.default.addScreenEdgePanGesturesToPresent(toView: self.navigationController!.view)
 
 // (Optional) Prevent status bar area from turning black when menu appears:
-menuLeftNavigationController.statusBarEndAlpha = 0
+leftMenuNavigationController.statusBarEndAlpha = 0
 // Copy all settings to the other menu
-menuRightNavigationController.settings = menuLeftNavigationController.settings
+rightMenuNavigationController.settings = leftMenuNavigationController.settings
 ```
 That's it.
 ### Customization
@@ -159,9 +160,9 @@ That's it.
 `SideMenuManager` supports the following:
 ``` swift
 /// The left menu.
-open var menuLeftNavigationController: UISideMenuNavigationController?
+open var leftMenuNavigationController: UISideMenuNavigationController?
 /// The right menu.
-public var menuRightNavigationController: UISideMenuNavigationController?
+public var rightMenuNavigationController: UISideMenuNavigationController?
 /**
  Adds screen edge gestures for both left and right sides to a view to present a menu.
 
@@ -217,8 +218,10 @@ var dismissOnPush: Bool = true
 var dismissOnRotation: Bool = true
 /// Automatically dismisses the menu when app goes to the background.
 var dismissWhenBackgrounded: Bool = true
-/// Enable or disable gestures that would swipe to dismiss the menu. Default is true.
-var enableSwipeGestures: Bool = true
+/// Enable or disable a swipe gesture that dismisses the menu. Will not be triggered when `presentingViewControllerUserInteractionEnabled` is set to true. Default is true.
+var enableSwipeToDismissGesture: Bool = true
+/// Enable or disable a tap gesture that dismisses the menu. Will not be triggered when `presentingViewControllerUserInteractionEnabled` is set to true. Default is true.
+var enableTapToDismissGesture: Bool = true
 /// The animation initial spring velocity when a menu is displayed. Ignored when displayed with a gesture.
 var initialSpringVelocity: CGFloat = 1
 /// Whether the menu appears on the right or left side of the screen. Right is the default. This property cannot be changed after the menu has loaded.
