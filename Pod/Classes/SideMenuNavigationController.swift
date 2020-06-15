@@ -73,7 +73,7 @@ internal protocol SideMenuNavigationControllerTransitionDelegate: class {
     func sideMenuTransitionDidDismiss(menu: Menu)
 }
 
-public struct SideMenuSettings: SideMenuNavigationController.Model, InitializableStruct {
+public struct SideMenuSettings: Model, InitializableStruct {
     public var allowPushOfSameClassTwice: Bool = true
     public var alwaysAnimate: Bool = true
     public var animationOptions: UIView.AnimationOptions = .curveEaseInOut
@@ -105,12 +105,11 @@ public struct SideMenuSettings: SideMenuNavigationController.Model, Initializabl
 }
 
 internal typealias Menu = SideMenuNavigationController
+typealias Model = MenuModel & PresentationModel & AnimationModel
 
 @objcMembers
 open class SideMenuNavigationController: UINavigationController {
-
-    internal typealias Model = MenuModel & PresentationModel & AnimationModel
-
+    
     private lazy var _leftSide = Protected(false) { [weak self] oldValue, newValue in
         guard self?.isHidden != false else {
             Print.warning(.property, arguments: .leftSide, required: true)
@@ -124,6 +123,7 @@ open class SideMenuNavigationController: UINavigationController {
     private var originalBackgroundColor: UIColor?
     private var rotating: Bool = false
     private var transitionController: SideMenuTransitionController?
+    private var transitionInteractive: Bool = false
 
     /// Delegate for receiving appear and disappear related events. If `nil` the visible view controller that displays a `SideMenuNavigationController` automatically receives these events.
     public weak var sideMenuDelegate: SideMenuNavigationControllerDelegate?
@@ -167,7 +167,6 @@ open class SideMenuNavigationController: UINavigationController {
     public init(rootViewController: UIViewController, settings: SideMenuSettings = SideMenuSettings()) {
         self.settings = settings
         super.init(rootViewController: rootViewController)
-
         setup()
     }
 
@@ -196,7 +195,6 @@ open class SideMenuNavigationController: UINavigationController {
 
         // We had presented a view before, so lets dismiss ourselves as already acted upon
         if view.isHidden {
-            transitionController?.transition(presenting: false, animated: false)
             dismiss(animated: false, completion: { [weak self] in
                 self?.view.isHidden = false
             })
@@ -208,9 +206,7 @@ open class SideMenuNavigationController: UINavigationController {
     override open func viewWillDisappear(_ animated: Bool) {
         super.viewWillDisappear(animated)
 
-        defer {
-            activeDelegate?.sideMenuWillDisappear?(menu: self, animated: animated)
-        }
+        defer { activeDelegate?.sideMenuWillDisappear?(menu: self, animated: animated) }
 
         guard !isBeingDismissed else { return }
 
@@ -240,7 +236,7 @@ open class SideMenuNavigationController: UINavigationController {
         // the view hierarchy leaving the screen black/empty. This is because the transition moves views within a container
         // view, but dismissing without animation removes the container view before the original hierarchy is restored.
         // This check corrects that.
-        if let foundViewController = findViewController, foundViewController.view.window == nil {
+        if isBeingDismissed {
             transitionController?.transition(presenting: false, animated: false)
         }
 
@@ -323,8 +319,11 @@ open class SideMenuNavigationController: UINavigationController {
 
     override open var transitioningDelegate: UIViewControllerTransitioningDelegate? {
         get {
-            transitionController = transitionController ?? SideMenuTransitionController(leftSide: leftSide, config: settings)
+            guard transitionController == nil else { return transitionController }
+            transitionController = SideMenuTransitionController(leftSide: leftSide, config: settings)
             transitionController?.delegate = self
+            transitionController?.interactive = transitionInteractive
+            transitionInteractive = false
             return transitionController
         }
         set { Print.warning(.transitioningDelegate, required: true) }
@@ -332,7 +331,7 @@ open class SideMenuNavigationController: UINavigationController {
 }
 
 // Interface
-extension SideMenuNavigationController: SideMenuNavigationController.Model {
+extension SideMenuNavigationController: Model {
 
     @IBInspectable open var allowPushOfSameClassTwice: Bool {
         get { return settings.allowPushOfSameClassTwice }
@@ -480,7 +479,7 @@ internal extension SideMenuNavigationController {
             if !presenting {
                 dismissMenu(interactively: true)
             }
-            transitionController?.handle(state: .update(progress: progress))
+            fallthrough
         case .changed:
             transitionController?.handle(state: .update(progress: progress))
         case .ended:
@@ -496,17 +495,17 @@ internal extension SideMenuNavigationController {
         transitionController?.handle(state: .cancel)
     }
 
-    func dismissMenu(animated flag: Bool = true, interactively interactive: Bool = false, completion: (() -> Void)? = nil) {
+    func dismissMenu(animated flag: Bool = true, interactively: Bool = false, completion: (() -> Void)? = nil) {
         guard !isHidden else { return }
-        transitionController?.interactive = interactive
+        transitionController?.interactive = interactively
         dismiss(animated: flag, completion: completion)
     }
 
     // Note: although this method is syntactically reversed it allows the interactive property to scoped privately
-    func present(_ viewControllerToPresentFrom: UIViewController?, interactively: Bool, completion: (() -> Void)? = nil) {
-        guard let viewControllerToPresentFrom = viewControllerToPresentFrom, transitioningDelegate != nil else { return }
-        transitionController?.interactive = interactively
-        viewControllerToPresentFrom.present(self, animated: true, completion: completion)
+    func present(from viewController: UIViewController?, interactively: Bool, completion: (() -> Void)? = nil) {
+        guard let viewController = viewController else { return }
+        transitionInteractive = interactively
+        viewController.present(self, animated: true, completion: completion)
     }
 }
 
